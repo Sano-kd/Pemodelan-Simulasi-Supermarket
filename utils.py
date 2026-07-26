@@ -1,3 +1,6 @@
+# ==============================
+# IMPORT LIBRARY
+# ==============================
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -5,6 +8,9 @@ from fpdf import FPDF
 import tempfile
 import os
 
+# ==============================
+# KONFIGURASI MAPPING & KOLOM
+# ==============================
 COLUMN_MAPPING = {'Reorderevel': 'ReorderLevel', ', ': 'SalesValue'}
 REQUIRED_COLUMNS = [
     'Date', 'ProductID', 'ProductName', 'Category', 'Supplier',
@@ -13,7 +19,9 @@ REQUIRED_COLUMNS = [
     'LastRestockDate', 'NextRestockDate', 'DeliveryTimeDays', 'DeliveryStatus'
 ]
 
-
+# ==============================
+# FUNGSI: LOAD DATA DARI EXCEL
+# ==============================
 def load_data(filepath):
     df = pd.read_excel(filepath)
     df.rename(columns=COLUMN_MAPPING, inplace=True)
@@ -24,6 +32,9 @@ def load_data(filepath):
     return df
 
 
+# ==============================
+# FUNGSI: HITUNG STATISTIK RINGKASAN
+# ==============================
 def get_summary_stats(df):
     return {
         'total_products': df['ProductName'].nunique(),
@@ -35,19 +46,26 @@ def get_summary_stats(df):
         'lowest_stock_product': df.loc[df['StockQuantity'].idxmin(), 'ProductName'],
     }
 
-
+# ==============================
+# FUNGSI: PENJUALAN PER BULAN
+# ==============================
 def get_monthly_sales(df):
     df_month = df.copy()
     df_month['Month'] = df_month['Date'].dt.to_period('M').astype(str)
     return df_month.groupby('Month')['UnitsSold'].sum().reset_index()
 
 
+# ==============================
+# FUNGSI: DISTRIBUSI KATEGORI
+# ==============================
 def get_category_distribution(df):
     cat_dist = df.groupby('Category')['UnitsSold'].sum().reset_index()
     cat_dist.columns = ['Category', 'TotalUnitsSold']
     return cat_dist
 
-
+# ==============================
+# FUNGSI: TABEL PROBABILITAS & INTERVAL
+# ==============================
 def compute_probability_table(series):
     freq = series.value_counts().sort_index()
     total = len(series)
@@ -74,6 +92,9 @@ def compute_probability_table(series):
     return prob_df, intervals
 
 
+# ==============================
+# FUNGSI: GENERATE BILANGAN ACAK (LCG)
+# ==============================
 def lcg_generate(n, a=34, c=11, m=99, z0=37):
     z = z0
     results = []
@@ -90,6 +111,9 @@ def lcg_generate(n, a=34, c=11, m=99, z0=37):
     return results
 
 
+# ==============================
+# KELAS: SIMULASI MONTE CARLO
+# ==============================
 class MonteCarloSimulation:
     def __init__(self, df, product_name, supplier_name=None):
         self.product_name = product_name
@@ -102,9 +126,15 @@ class MonteCarloSimulation:
             raise ValueError(f'Tidak ada data untuk produk "{product_name}"' + (f' dengan supplier "{supplier_name}"' if supplier_name else ''))
         self.product_info = self.product_data.iloc[0]
 
+    # ==============================
+    # FUNGSI DALAM KELAS: TABEL PROBABILITAS
+    # ==============================
     def compute_probability_table(self):
         return compute_probability_table(self.product_data['UnitsSold'])
 
+    # ==============================
+    # FUNGSI DALAM KELAS: SIMULASI PERSEDIAAN
+    # ==============================
     def simulate_inventory(self, days):
         prob_df, intervals = self.compute_probability_table()
 
@@ -153,10 +183,16 @@ class MonteCarloSimulation:
 
         return prob_df, intervals, random_numbers, hasil_df, summary, lcg_data
 
+    # ==============================
+    # FUNGSI DALAM KELAS: JALANKAN SIMULASI
+    # ==============================
     def run(self, days):
         prob_df, intervals, rand_nums, hasil_df, summary, lcg_data = self.simulate_inventory(days)
         return prob_df, hasil_df, summary
 
+    # ==============================
+    # FUNGSI DALAM KELAS: SIMULASI BERULANG
+    # ==============================
     def run_multiple(self, days, n_simulations):
         results = []
         for _ in range(n_simulations):
@@ -165,6 +201,9 @@ class MonteCarloSimulation:
         return pd.DataFrame(results)
 
 
+# ==============================
+# FUNGSI: BUAT LAPORAN PDF
+# ==============================
 def generate_pdf_report(product_name, periode, unit_price, prob_df, hasil_df, summary):
     pdf = FPDF()
     pdf.add_page()
@@ -249,6 +288,9 @@ def generate_pdf_report(product_name, periode, unit_price, prob_df, hasil_df, su
     return pdf_path
 
 
+# ==============================
+# FUNGSI: GENERATE INTERPRETASI TEKS
+# ==============================
 def generate_interpretation(product_name, days, summary):
     if isinstance(days, str):
         day_str = days

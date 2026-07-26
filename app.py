@@ -1,3 +1,6 @@
+# ==============================
+# IMPORT LIBRARY
+# ==============================
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,6 +9,9 @@ from io import StringIO
 import time
 import os
 
+# ==============================
+# IMPORT FUNGSI DARI UTILS.PY
+# ==============================
 from utils import (
     load_data, get_summary_stats, get_monthly_sales,
     get_category_distribution,
@@ -13,6 +19,9 @@ from utils import (
     generate_interpretation, lcg_generate
 )
 
+# ==============================
+# KONFIGURASI HALAMAN STREAMLIT
+# ==============================
 st.set_page_config(
     page_title='Monte Carlo - Simulasi Persediaan Supermarket',
     page_icon='📊',
@@ -20,6 +29,9 @@ st.set_page_config(
     initial_sidebar_state='expanded',
 )
 
+# ==============================
+# KONSTANTA WARNA (LIGHT & DARK MODE)
+# ==============================
 DEFAULT_DATASET = 'dataset_3_supplier_simulasi.xlsx'
 LIGHT_BG = '#ffffff'
 LIGHT_CARD = '#f8f9fa'
@@ -31,7 +43,9 @@ PRIMARY = '#1f77b4'
 SECONDARY = '#6c757d'
 ACCENT = '#2ecc71'
 
-
+# ==============================
+# FUNGSI: TERAPKAN CSS KUSTOM
+# ==============================
 def apply_custom_css(dark_mode):
     if dark_mode:
         bg = DARK_BG; card = DARK_CARD; text = DARK_TEXT; sidebar_bg = '#161a28'
@@ -66,6 +80,9 @@ def apply_custom_css(dark_mode):
     ''', unsafe_allow_html=True)
 
 
+# ==============================
+# FUNGSI: INISIALISASI SESSION STATE
+# ==============================
 def init_session():
     for key in ['page', 'dark_mode', 'data', 'sim_prob', 'sim_hasil',
                 'sim_summary', 'sim_produk', 'sim_supplier', 'sim_days', 'sim_intervals',
@@ -76,13 +93,19 @@ def init_session():
             else: st.session_state[key] = None
 
 
+# ==============================
+# FUNGSI: DAPATKAN WARNA TEKS
+# ==============================
 def get_text_color():
     return DARK_TEXT if st.session_state.dark_mode else LIGHT_TEXT
 
 
+# ==============================
+# FUNGSI: NAVIGASI SIDEBAR
+# ==============================
 def sidebar_nav():
     with st.sidebar:
-        st.markdown('## Simulasi MC')
+        st.markdown('## Simulasi MonteCarlo')
         st.markdown('---')
         menu_items = ['Dashboard', 'Data Produk', 'Simulasi Monte Carlo', 'Laporan']
         for label in menu_items:
@@ -108,6 +131,9 @@ def sidebar_nav():
                 st.rerun()
 
 
+# ==============================
+# FUNGSI: MUAT DATASET
+# ==============================
 def load_dataset():
     if st.session_state.data is not None:
         return st.session_state.data
@@ -117,6 +143,9 @@ def load_dataset():
     return None
 
 
+# ==============================
+# HALAMAN: DASHBOARD
+# ==============================
 def page_dashboard():
     df = load_dataset()
     if df is None:
@@ -167,16 +196,11 @@ def page_dashboard():
                           font_color=get_text_color())
         st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown('---')
-    fig = px.scatter(df, x='StockQuantity', y='UnitsSold', color='Category',
-                     title='Stock Quantity vs Units Sold',
-                     labels={'StockQuantity': 'Stok', 'UnitsSold': 'Unit Terjual'},
-                     opacity=0.6)
-    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                      font_color=get_text_color())
-    st.plotly_chart(fig, use_container_width=True)
 
 
+# ==============================
+# HALAMAN: DATA PRODUK
+# ==============================
 def page_data_produk():
     df = load_dataset()
     if df is None:
@@ -220,6 +244,9 @@ def page_data_produk():
     st.download_button('📥 Download CSV', csv_buffer.getvalue(), 'data_produk_filtered.csv', 'text/csv')
 
 
+# ==============================
+# HALAMAN: SIMULASI MONTE CARLO
+# ==============================
 def page_simulasi():
     df = load_dataset()
     if df is None:
@@ -393,6 +420,9 @@ def page_simulasi():
             st.rerun()
 
 
+# ==============================
+# HALAMAN: LAPORAN
+# ==============================
 def page_laporan():
     if st.session_state.sim_hasil is None:
         st.warning('Belum ada hasil simulasi. Jalankan simulasi terlebih dahulu.')
@@ -471,6 +501,9 @@ def page_laporan():
                                f'laporan_mc_{produk}.pdf', 'application/pdf')
 
 
+# ==============================
+# DAFTAR HALAMAN
+# ==============================
 pages = {
     'Dashboard': page_dashboard,
     'Data Produk': page_data_produk,
@@ -478,13 +511,17 @@ pages = {
     'Laporan': page_laporan,
 }
 
-
+# ==============================
+# FUNGSI UTAMA (MAIN)
+# ==============================
 def main():
     init_session()
     apply_custom_css(st.session_state.dark_mode)
     sidebar_nav()
     pages.get(st.session_state.page, page_dashboard)()
 
-
+# ==============================
+# JALANKAN APLIKASI
+# ==============================
 if __name__ == '__main__':
     main()
